@@ -21,3 +21,5 @@ Create database `simple_wallet`
 ```go install -tags 'simple_wallet' github.com/golang-migrate/migrate/v4/cmd/migrate@latest ```
 
 ``` migrate -database "mysql://root:12345678@tcp(127.0.0.1:3333)/simple_wallet?parseTime=true" -path sqldb/migrations up ```
+
+``` migrate create -ext sql -dir sqldb/migrations <file_name> ```
