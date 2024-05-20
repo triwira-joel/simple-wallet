@@ -16,6 +16,7 @@ import (
 	sqldb "github.com/triwira-joel/simple-wallet/sqldb"
 )
 
+// to init database for now, will remove later
 func initDb() error {
 	ctx := context.Background()
 
