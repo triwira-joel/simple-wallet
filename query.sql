@@ -47,17 +47,25 @@ WHERE user_id=?;
 SELECT * FROM transaction_history
 WHERE id = ? LIMIT 1;
 
--- name: GetTransactionHistoryByUserId :one
+-- name: GetLatestTransactionHistoryByUserId :one
 SELECT * FROM transaction_history
-WHERE user_id = ? LIMIT 1;
+WHERE user_id = ? ORDER BY timestamp DESC LIMIT 1;
 
--- name: GetTransactionHistoryByAccountId :one
+-- name: GetLatestTransactionHistoryByAccountId :one
 SELECT * FROM transaction_history
-WHERE account_id = ? LIMIT 1;
+WHERE account_id = ? ORDER BY timestamp DESC LIMIT 1;
 
 -- name: GetTransactionHistories :many
 SELECT * FROM transaction_history
 ORDER BY id;
+
+-- name: GetTransactionHistoriesByUserId :many
+SELECT * FROM transaction_history
+WHERE user_id = ?;
+
+-- name: GetTransactionHistoriesByAccountId :many
+SELECT * FROM transaction_history
+WHERE account_id = ?;
 
 -- name: CreateTransactionHistory :execresult
 INSERT INTO transaction_history (
