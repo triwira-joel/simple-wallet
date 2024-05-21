@@ -2,7 +2,10 @@ module github.com/triwira-joel/simple-wallet
 
 go 1.22.3
 
-require github.com/labstack/echo/v4 v4.12.0
+require (
+	github.com/joho/godotenv v1.5.1
+	github.com/labstack/echo/v4 v4.12.0
+)
 
 require filippo.io/edwards25519 v1.1.0 // indirect
 

@@ -1,30 +1,28 @@
 package main
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/triwira-joel/simple-wallet/infra"
 	userHandler "github.com/triwira-joel/simple-wallet/private/adapter/api/user"
-	userRepo "github.com/triwira-joel/simple-wallet/private/adapter/repository/user"
+	repo "github.com/triwira-joel/simple-wallet/private/adapter/repository/user"
+	"github.com/triwira-joel/simple-wallet/private/config"
 	userService "github.com/triwira-joel/simple-wallet/private/service/user"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
-	userRepo := userRepo.NewRepository()
-	userService := userService.New(userRepo)
-	userHandler := userHandler.NewHttpHandler(userService)
+	cnf := config.Get()
+	dbStruct := infra.DBHandler{}
+	db := dbStruct.ConnectDB(cnf)
 
-	db := infra.DBHandler{}
-	err := db.ConnectDB()
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
+	dbHandler := infra.NewDBHandler(db)
+	repo := repo.NewUserRepository(dbHandler.Queries)
+	userService := userService.NewUserService(repo)
+	userHandler := userHandler.NewUserHTTPHandler(userService)
 
 	e := echo.New()
 

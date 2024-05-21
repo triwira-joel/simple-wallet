@@ -2,9 +2,9 @@ package user
 
 import (
 	"github.com/labstack/echo/v4"
-	userModel "github.com/triwira-joel/simple-wallet/private/adapter/repository/db/user"
+	model "github.com/triwira-joel/simple-wallet/sqldb"
 )
 
 type UserRepository interface {
-	GetUsers(c echo.Context) ([]userModel.UserDB, error)
+	GetUsers(c echo.Context) ([]model.User, error)
 }

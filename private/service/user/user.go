@@ -4,14 +4,14 @@ import (
 	repo "github.com/triwira-joel/simple-wallet/private/port/repository/user"
 )
 
-type service struct {
+type UserService struct {
 	repo repo.UserRepository
 }
 
-func New(
+func NewUserService(
 	repo repo.UserRepository,
-) *service {
-	return &service{
+) *UserService {
+	return &UserService{
 		repo,
 	}
 }

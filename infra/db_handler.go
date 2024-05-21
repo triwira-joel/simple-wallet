@@ -2,31 +2,47 @@ package infra
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/triwira-joel/simple-wallet/constants"
+	"github.com/triwira-joel/simple-wallet/private/config"
+	sqldb "github.com/triwira-joel/simple-wallet/sqldb"
 )
 
 type DBHandler struct {
-	DB *sql.DB
+	DB      *sql.DB
+	Queries *sqldb.Queries
 }
 
-func (d *DBHandler) ConnectDB() error {
-	db, err := sql.Open("mysql", "root:12345678@tcp(127.0.0.1:3333)/simple_wallet?parseTime=true")
+func NewDBHandler(db *sql.DB) *DBHandler {
+	return &DBHandler{
+		DB:      db,
+		Queries: sqldb.New(db),
+	}
+}
+
+func (d *DBHandler) ConnectDB(cnf *config.Config) *sql.DB {
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
+		cnf.Database.User, cnf.Database.Password,
+		cnf.Database.Host,
+		cnf.Database.Port,
+		cnf.Database.Name,
+	)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Println(constants.ConnectDBFail + " | " + err.Error())
-		return err
+		log.Fatal(constants.ConnectDBFail + " | " + err.Error())
 	}
 
 	d.DB = db
 	err = d.DB.Ping()
 	if err != nil {
-		log.Println(constants.ConnectDBFail, err.Error())
-		return err
+		log.Fatal(constants.ConnectDBFail, err.Error())
 	}
 
-	return nil
+	return db
 }
 
 func (d *DBHandler) Close() {
