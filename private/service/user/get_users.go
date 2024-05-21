@@ -5,7 +5,7 @@ import (
 	domain "github.com/triwira-joel/simple-wallet/private/domain/user"
 )
 
-func (srv *UserService) GetUsers(c echo.Context) ([]domain.User, error) {
+func (srv *userService) GetUsers(c echo.Context) ([]domain.User, error) {
 	res := []domain.User{}
 	users, err := srv.repo.GetUsers(c)
 	if err != nil {
