@@ -27,6 +27,36 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (s
 	return q.db.ExecContext(ctx, createAccount, arg.UserID, arg.Balance)
 }
 
+const createTransactionHistory = `-- name: CreateTransactionHistory :execresult
+INSERT INTO transaction_history (
+    transaction_type, amount, user_id, account_id, timestamp, created_at, updated_at
+) VALUES (
+    ?,?,?,?,?,?,?
+)
+`
+
+type CreateTransactionHistoryParams struct {
+	TransactionType sql.NullString
+	Amount          sql.NullInt64
+	UserID          sql.NullInt32
+	AccountID       sql.NullInt32
+	Timestamp       sql.NullTime
+	CreatedAt       sql.NullTime
+	UpdatedAt       sql.NullTime
+}
+
+func (q *Queries) CreateTransactionHistory(ctx context.Context, arg CreateTransactionHistoryParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createTransactionHistory,
+		arg.TransactionType,
+		arg.Amount,
+		arg.UserID,
+		arg.AccountID,
+		arg.Timestamp,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+}
+
 const createUser = `-- name: CreateUser :execresult
 INSERT INTO users (
     name, email, password, status, created_at, updated_at
@@ -125,6 +155,106 @@ func (q *Queries) GetAccounts(ctx context.Context) ([]Account, error) {
 	return items, nil
 }
 
+const getTransactionHistories = `-- name: GetTransactionHistories :many
+SELECT id, transaction_type, amount, user_id, account_id, timestamp, created_at, updated_at FROM transaction_history
+ORDER BY id
+`
+
+func (q *Queries) GetTransactionHistories(ctx context.Context) ([]TransactionHistory, error) {
+	rows, err := q.db.QueryContext(ctx, getTransactionHistories)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TransactionHistory
+	for rows.Next() {
+		var i TransactionHistory
+		if err := rows.Scan(
+			&i.ID,
+			&i.TransactionType,
+			&i.Amount,
+			&i.UserID,
+			&i.AccountID,
+			&i.Timestamp,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTransactionHistory = `-- name: GetTransactionHistory :one
+SELECT id, transaction_type, amount, user_id, account_id, timestamp, created_at, updated_at FROM transaction_history
+WHERE id = ? LIMIT 1
+`
+
+func (q *Queries) GetTransactionHistory(ctx context.Context, id int32) (TransactionHistory, error) {
+	row := q.db.QueryRowContext(ctx, getTransactionHistory, id)
+	var i TransactionHistory
+	err := row.Scan(
+		&i.ID,
+		&i.TransactionType,
+		&i.Amount,
+		&i.UserID,
+		&i.AccountID,
+		&i.Timestamp,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getTransactionHistoryByAccountId = `-- name: GetTransactionHistoryByAccountId :one
+SELECT id, transaction_type, amount, user_id, account_id, timestamp, created_at, updated_at FROM transaction_history
+WHERE account_id = ? LIMIT 1
+`
+
+func (q *Queries) GetTransactionHistoryByAccountId(ctx context.Context, accountID sql.NullInt32) (TransactionHistory, error) {
+	row := q.db.QueryRowContext(ctx, getTransactionHistoryByAccountId, accountID)
+	var i TransactionHistory
+	err := row.Scan(
+		&i.ID,
+		&i.TransactionType,
+		&i.Amount,
+		&i.UserID,
+		&i.AccountID,
+		&i.Timestamp,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getTransactionHistoryByUserId = `-- name: GetTransactionHistoryByUserId :one
+SELECT id, transaction_type, amount, user_id, account_id, timestamp, created_at, updated_at FROM transaction_history
+WHERE user_id = ? LIMIT 1
+`
+
+func (q *Queries) GetTransactionHistoryByUserId(ctx context.Context, userID sql.NullInt32) (TransactionHistory, error) {
+	row := q.db.QueryRowContext(ctx, getTransactionHistoryByUserId, userID)
+	var i TransactionHistory
+	err := row.Scan(
+		&i.ID,
+		&i.TransactionType,
+		&i.Amount,
+		&i.UserID,
+		&i.AccountID,
+		&i.Timestamp,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getUser = `-- name: GetUser :one
 SELECT id, name, email, password, status, created_at, updated_at FROM users
 WHERE id = ? LIMIT 1
@@ -181,25 +311,77 @@ func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
-const updateAccount = `-- name: UpdateAccount :exec
+const updateAccountByUserId = `-- name: UpdateAccountByUserId :exec
 UPDATE accounts SET 
     balance=?,updated_at=?
-WHERE id=? AND user_id=?
+WHERE user_id=?
 `
 
-type UpdateAccountParams struct {
+type UpdateAccountByUserIdParams struct {
 	Balance   sql.NullInt64
 	UpdatedAt sql.NullTime
-	ID        int32
 	UserID    sql.NullInt32
 }
 
-func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) error {
-	_, err := q.db.ExecContext(ctx, updateAccount,
-		arg.Balance,
-		arg.UpdatedAt,
-		arg.ID,
+func (q *Queries) UpdateAccountByUserId(ctx context.Context, arg UpdateAccountByUserIdParams) error {
+	_, err := q.db.ExecContext(ctx, updateAccountByUserId, arg.Balance, arg.UpdatedAt, arg.UserID)
+	return err
+}
+
+const updateTransactionHistoryByAccountId = `-- name: UpdateTransactionHistoryByAccountId :exec
+UPDATE transaction_history SET 
+    transaction_type=?,amount=?,user_id=?,account_id=?,timestamp=?,updated_at=?
+WHERE account_id=?
+`
+
+type UpdateTransactionHistoryByAccountIdParams struct {
+	TransactionType sql.NullString
+	Amount          sql.NullInt64
+	UserID          sql.NullInt32
+	AccountID       sql.NullInt32
+	Timestamp       sql.NullTime
+	UpdatedAt       sql.NullTime
+	AccountID_2     sql.NullInt32
+}
+
+func (q *Queries) UpdateTransactionHistoryByAccountId(ctx context.Context, arg UpdateTransactionHistoryByAccountIdParams) error {
+	_, err := q.db.ExecContext(ctx, updateTransactionHistoryByAccountId,
+		arg.TransactionType,
+		arg.Amount,
 		arg.UserID,
+		arg.AccountID,
+		arg.Timestamp,
+		arg.UpdatedAt,
+		arg.AccountID_2,
+	)
+	return err
+}
+
+const updateTransactionHistoryByUserId = `-- name: UpdateTransactionHistoryByUserId :exec
+UPDATE transaction_history SET 
+    transaction_type=?,amount=?,user_id=?,account_id=?,timestamp=?,updated_at=?
+WHERE user_id=?
+`
+
+type UpdateTransactionHistoryByUserIdParams struct {
+	TransactionType sql.NullString
+	Amount          sql.NullInt64
+	UserID          sql.NullInt32
+	AccountID       sql.NullInt32
+	Timestamp       sql.NullTime
+	UpdatedAt       sql.NullTime
+	UserID_2        sql.NullInt32
+}
+
+func (q *Queries) UpdateTransactionHistoryByUserId(ctx context.Context, arg UpdateTransactionHistoryByUserIdParams) error {
+	_, err := q.db.ExecContext(ctx, updateTransactionHistoryByUserId,
+		arg.TransactionType,
+		arg.Amount,
+		arg.UserID,
+		arg.AccountID,
+		arg.Timestamp,
+		arg.UpdatedAt,
+		arg.UserID_2,
 	)
 	return err
 }
